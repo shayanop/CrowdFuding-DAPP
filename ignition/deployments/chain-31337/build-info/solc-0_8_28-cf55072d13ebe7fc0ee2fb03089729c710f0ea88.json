@@ -1,0 +1,39 @@
+{
+  "_format": "hh3-sol-build-info-1",
+  "id": "solc-0_8_28-cf55072d13ebe7fc0ee2fb03089729c710f0ea88",
+  "solcVersion": "0.8.28",
+  "solcLongVersion": "0.8.28+commit.7893614a",
+  "userSourceNameMap": {
+    "contracts/KYCRegistry_Student.sol": "project/contracts/KYCRegistry_Student.sol"
+  },
+  "input": {
+    "language": "Solidity",
+    "settings": {
+      "evmVersion": "cancun",
+      "optimizer": {
+        "enabled": true,
+        "runs": 200
+      },
+      "outputSelection": {
+        "*": {
+          "": [
+            "ast"
+          ],
+          "*": [
+            "abi",
+            "evm.bytecode",
+            "evm.deployedBytecode",
+            "evm.methodIdentifiers",
+            "metadata"
+          ]
+        }
+      },
+      "remappings": []
+    },
+    "sources": {
+      "project/contracts/KYCRegistry_Student.sol": {
+        "content": "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.27;\n\n/**\n * KYCRegistry_MuhammadShayanAhmed\n * - Tracks KYC requests (name, CNIC) per wallet\n * - Admin (deployer) can approve/reject\n * - Other contracts can query verification status\n */\ncontract KYCRegistry_MuhammadShayanAhmed {\n    enum KycStatus { None, Pending, Approved, Rejected }\n\n    struct KycRequest {\n        string fullName;      // Student requires approval of full name per assignment\n        string cnic;          // National ID / CNIC string\n        KycStatus status;     // Current status\n    }\n\n    address public immutable admin;\n\n    mapping(address => KycRequest) private addressToRequest;\n    mapping(address => bool) private isVerifiedAddress;\n    \n    // Track pending addresses for admin panel\n    address[] private pendingAddresses;\n    mapping(address => bool) private isPendingAddress;\n\n    event KycSubmitted(address indexed user, string fullName, string cnic);\n    event KycApproved(address indexed user, string fullName);\n    event KycRejected(address indexed user, string reason);\n\n    modifier onlyAdmin() {\n        require(msg.sender == admin, \"Only admin\");\n        _;\n    }\n\n    constructor() {\n        admin = msg.sender;\n    }\n\n    function submitKyc(string calldata fullName, string calldata cnic) external {\n        KycRequest storage req = addressToRequest[msg.sender];\n        require(bytes(fullName).length > 0, \"Full name required\");\n        require(bytes(cnic).length > 0, \"CNIC required\");\n        require(req.status != KycStatus.Pending, \"Already pending\");\n\n        addressToRequest[msg.sender] = KycRequest({\n            fullName: fullName,\n            cnic: cnic,\n            status: KycStatus.Pending\n        });\n\n        // Add to pending list if not already there\n        if (!isPendingAddress[msg.sender]) {\n            pendingAddresses.push(msg.sender);\n            isPendingAddress[msg.sender] = true;\n        }\n\n        emit KycSubmitted(msg.sender, fullName, cnic);\n    }\n\n    function approve(address user) external onlyAdmin {\n        KycRequest storage req = addressToRequest[user];\n        require(req.status == KycStatus.Pending, \"Not pending\");\n\n        req.status = KycStatus.Approved;\n        isVerifiedAddress[user] = true;\n        \n        // Remove from pending list\n        _removePending(user);\n        \n        emit KycApproved(user, req.fullName);\n    }\n\n    function reject(address user, string calldata reason) external onlyAdmin {\n        KycRequest storage req = addressToRequest[user];\n        require(req.status == KycStatus.Pending || req.status == KycStatus.Approved, \"No request\");\n\n        req.status = KycStatus.Rejected;\n        isVerifiedAddress[user] = false;\n        \n        // Remove from pending list\n        _removePending(user);\n        \n        emit KycRejected(user, reason);\n    }\n\n    function getKyc(address user) external view returns (KycRequest memory) {\n        return addressToRequest[user];\n    }\n\n    function isVerified(address user) external view returns (bool) {\n        return isVerifiedAddress[user] || user == admin;\n    }\n\n    function getAllPending() external view returns (address[] memory) {\n        return pendingAddresses;\n    }\n\n    function _removePending(address user) private {\n        if (isPendingAddress[user]) {\n            isPendingAddress[user] = false;\n            \n            // Find and remove from array\n            for (uint i = 0; i < pendingAddresses.length; i++) {\n                if (pendingAddresses[i] == user) {\n                    pendingAddresses[i] = pendingAddresses[pendingAddresses.length - 1];\n                    pendingAddresses.pop();\n                    break;\n                }\n            }\n        }\n    }\n}\n\n\n"
+      }
+    }
+  }
+}
