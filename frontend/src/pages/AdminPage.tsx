@@ -141,9 +141,10 @@ export default function AdminPage() {
     return (
       <div className="container">
         <div className="access-denied">
-          <h2>🔒 Admin Access Required</h2>
-          <p><strong>Access Denied:</strong> Only admin can access this page</p>
-          <p><em>Please connect with the admin account to access administrative functions</em></p>
+          <div className="eyebrow">// Access denied</div>
+          <h2>Admin clearance required</h2>
+          <p>Only the contract admin can open this console.</p>
+          <p>Connect the wallet that deployed the contracts.</p>
         </div>
       </div>
     )
@@ -152,8 +153,9 @@ export default function AdminPage() {
   return (
     <div className="container">
       <div className="admin-header">
-        <h2>🔒 Admin Dashboard</h2>
-        <p className="admin-subtitle">KYC Management System</p>
+        <div className="eyebrow">// Admin console</div>
+        <h2>KYC control center</h2>
+        <p className="admin-subtitle">Review identity requests and approve them on-chain.</p>
       </div>
 
       <div className="stats-grid">
@@ -179,7 +181,8 @@ export default function AdminPage() {
       {success && <div className="success-message">{success}</div>}
 
       <div className="admin-section">
-        <h3>📋 Pending KYC Requests ({pendingDetails.length})</h3>
+        <div className="eyebrow">01 / Queue</div>
+        <h3>Pending requests ({pendingDetails.length})</h3>
         {pendingDetails.length === 0 ? (
           <div className="empty-state">
             <p>No pending KYC requests at this time</p>
@@ -203,7 +206,7 @@ export default function AdminPage() {
                       disabled={loading}
                       className="approve-button"
                     >
-                      {loading ? <span className="loading"></span> : '✅ Approve'}
+                      {loading ? <span className="loading"></span> : 'Approve'}
                     </button>
                     <div className="reject-group">
                       <input 
@@ -217,7 +220,7 @@ export default function AdminPage() {
                         disabled={loading}
                         className="reject-button"
                       >
-                        {loading ? <span className="loading"></span> : '❌ Reject'}
+                        {loading ? <span className="loading"></span> : 'Reject'}
                       </button>
                     </div>
                   </div>
@@ -229,7 +232,8 @@ export default function AdminPage() {
       </div>
 
       <div className="admin-section">
-        <h3>🔍 Manual KYC Actions</h3>
+        <div className="eyebrow">02 / Override</div>
+        <h3>Manual KYC actions</h3>
         <div className="manual-actions">
           <input 
             placeholder="Enter user address" 
@@ -244,7 +248,7 @@ export default function AdminPage() {
               disabled={loading || !address}
               className="approve-button"
             >
-              {loading ? <span className="loading"></span> : '✅ Approve'}
+              {loading ? <span className="loading"></span> : 'Approve'}
             </button>
             <div className="reject-group">
               <input 
@@ -258,7 +262,7 @@ export default function AdminPage() {
                 disabled={loading || !address}
                 className="reject-button"
               >
-                {loading ? <span className="loading"></span> : '❌ Reject'}
+                {loading ? <span className="loading"></span> : 'Reject'}
               </button>
             </div>
           </div>

@@ -36,17 +36,18 @@ function Navigation() {
   return (
     <header className="header">
       <div className="logo">
-        <Link to="/">
-          🌟 CrowdFund
+        <Link to="/" aria-label="CrowdFund home">
+          <span className="logo-mark" aria-hidden="true" />
+          CROWDFUND
         </Link>
       </div>
       <nav className="main-nav">
         <Link to="/" className={location.pathname === '/' ? 'active' : ''}>
-          <span>Home</span>
+          Campaigns
         </Link>
         {isAdmin && (
           <Link to="/admin" className={location.pathname === '/admin' ? 'active' : ''}>
-          <span>Admin Panel</span>
+            Admin
           </Link>
         )}
       </nav>
@@ -112,13 +113,13 @@ function MainContent() {
 
   useEffect(() => {
     (async () => {
+      refreshCampaigns()
       try {
         const w = await getWallet()
         setWeb3(w)
         if (w.account) {
           await refreshVerificationStatus()
         }
-        await refreshCampaigns()
       } catch (err) {
         setError('Failed to connect to wallet')
       }
@@ -226,29 +227,49 @@ function MainContent() {
     }
   }
 
+  const chainName = (id?: number) =>
+    id === 11155111 ? 'Sepolia' : id === 31337 ? 'Hardhat Local' : id ? `Chain ${id}` : 'Unknown'
+
   return (
-    <div className="app-container">
-      <h1>Decentralized Crowdfunding DApp</h1>
+    <main className="app-container">
+      <section className="hero">
+        <div className="eyebrow">// On-chain · KYC-gated · Trustless</div>
+        <h1>Fund the future, <span>block by block.</span></h1>
+        <p>Launch and back campaigns directly on Ethereum. Every contribution is recorded on-chain and released only when the goal is met.</p>
+      </section>
 
       <div className="wallet-info">
-        <strong>Wallet:</strong> {web3.account ? `${web3.account.slice(0, 6)}...${web3.account.slice(-4)}` : 'Not connected'} | 
-        <strong>Chain:</strong> {web3.chainId || 'Unknown'} |
-        <strong>Status:</strong> {isVerified ? '✅ Verified' : 'Not verified'}
+        <div className="readout">
+          <div className="readout-label">Wallet</div>
+          <div className="readout-value">
+            <span className={`dot ${web3.account ? 'on' : ''}`} />
+            {web3.account ? `${web3.account.slice(0, 6)}…${web3.account.slice(-4)}` : 'Not connected'}
+          </div>
+        </div>
+        <div className="readout">
+          <div className="readout-label">Network</div>
+          <div className="readout-value">{chainName(web3.chainId)}</div>
+        </div>
+        <div className="readout">
+          <div className="readout-label">Identity</div>
+          <div className="readout-value">
+            <span className={`dot ${isVerified ? 'on' : 'warn'}`} />
+            {isVerified ? 'Verified' : 'Not verified'}
+          </div>
+        </div>
       </div>
 
-      {error && <div className="error">{error}</div>}
-      {success && <div className="success">{success}</div>}
+      {error && <div className="error" role="alert">{error}</div>}
+      {success && <div className="success" role="status">{success}</div>}
 
       <div className="section">
-        <h2>KYC Verification</h2>
-        <div style={{display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem'}}>
-          <p><strong>Status:</strong> {isVerified ? '✅ Verified' : 'Not Verified'}</p>
-          <button
-            onClick={refreshVerificationStatus}
-            disabled={loading}
-            style={{background: 'linear-gradient(135deg, #4299e1 0%, #3182ce 100%)', padding: '0.5rem 1rem', fontSize: '0.875rem'}}
-          >
-            Refresh Status
+        <div className="section-head">
+          <div>
+            <div className="eyebrow">01 / Identity</div>
+            <h2>KYC verification</h2>
+          </div>
+          <button className="ghost" onClick={refreshVerificationStatus} disabled={loading}>
+            Refresh status
           </button>
         </div>
 
@@ -272,13 +293,21 @@ function MainContent() {
           </div>
         )}
 
-        <p><em>Note: Admin approval required. Connect as Account #0 to approve.</em></p>
+        <p className="section-note">
+          {isVerified
+            ? 'Your identity is verified. You can launch campaigns below.'
+            : 'Submit your details once. An admin approves the request on-chain before you can launch campaigns.'}
+        </p>
       </div>
 
       {isVerified && (
         <div className="section">
-          <h2>Create Campaign</h2>
-          <p><em>Requires KYC verification</em></p>
+          <div className="section-head">
+            <div>
+              <div className="eyebrow">02 / Launch</div>
+              <h2>Create a campaign</h2>
+            </div>
+          </div>
           <div className="input-group">
             <input
               placeholder="Campaign Title"
@@ -309,32 +338,51 @@ function MainContent() {
       )}
 
       <div className="section">
-        <h2>Active Campaigns</h2>
+        <div className="section-head">
+          <div>
+            <div className="eyebrow">{isVerified ? '03' : '02'} / Live</div>
+            <h2>Campaigns</h2>
+          </div>
+          <span className="campaign-id">{campaigns.length} on-chain</span>
+        </div>
         {campaigns.length === 0 ? (
-          <p>No campaigns yet. Create one above!</p>
+          <p className="empty">No campaigns yet. Verify your identity and launch the first one.</p>
         ) : (
-          campaigns.map((c) => (
-            <div key={c.id} className="campaign-card">
-              <div className="campaign-title">{c.title}</div>
-              <div className="campaign-description">{c.description}</div>
+          <div className="campaign-grid">
+          {campaigns.map((c) => {
+            const pct = c.goal > 0n ? Math.min(100, Number((c.raised * 100n) / c.goal)) : 0
+            const status = Number(c.status)
+            return (
+            <article key={c.id} className="campaign-card">
+              <div className="campaign-top">
+                <div>
+                  <div className="campaign-id">#{String(c.id).padStart(3, '0')}</div>
+                  <div className="campaign-title">{c.title}</div>
+                </div>
+                <span className={`status-badge ${['status-active', 'status-completed', 'status-withdrawn'][status] ?? 'status-active'}`}>
+                  {getStatusText(status)}
+                </span>
+              </div>
+              <p className="campaign-description">{c.description}</p>
+              <div className="progress">
+                <div className="progress-track" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label="Funding progress">
+                  <div className="progress-fill" style={{ width: `${pct}%` }} />
+                </div>
+                <div className="progress-meta">
+                  <strong>{formatEther(c.raised)} / {formatEther(c.goal)} ETH</strong>
+                  <span>{pct}%</span>
+                </div>
+              </div>
               <div className="campaign-stats">
                 <div className="stat">
                   <div className="stat-label">Creator</div>
                   <div className="stat-value">
-                    {c.creator.slice(0,6)}...{c.creator.slice(-4)}
+                    {c.creator.slice(0,6)}…{c.creator.slice(-4)}
                   </div>
                 </div>
                 <div className="stat">
-                  <div className="stat-label">Goal</div>
-                  <div className="stat-value">{formatEther(c.goal)} ETH</div>
-                </div>
-                <div className="stat">
-                  <div className="stat-label">Raised</div>
-                  <div className="stat-value">{formatEther(c.raised)} ETH</div>
-                </div>
-                <div className="stat">
-                  <div className="stat-label">Status</div>
-                  <div className="stat-value">{getStatusText(Number(c.status))}</div>
+                  <div className="stat-label">Remaining</div>
+                  <div className="stat-value">{c.raised >= c.goal ? '0' : formatEther(BigInt(c.goal) - BigInt(c.raised))} ETH</div>
                 </div>
               </div>
 
@@ -352,7 +400,7 @@ function MainContent() {
                     onClick={() => contribute(c.id)} 
                     disabled={loading || !web3.account || !contributeAmount}
                   >
-                    {loading ? <span className="loading"></span> : `Contribute ${contributeAmount} ETH`}
+                    {loading ? <span className="loading"></span> : 'Back it'}
                   </button>
                 </div>
               )}
@@ -365,11 +413,13 @@ function MainContent() {
                   {loading ? <span className="loading"></span> : 'Withdraw Funds'}
                 </button>
               )}
-            </div>
-          ))
+            </article>
+            )
+          })}
+          </div>
         )}
       </div>
-    </div>
+    </main>
   )
 }
 
