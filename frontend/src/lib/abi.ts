@@ -1,6 +1,8 @@
 // ABIs matching the actual deployed contracts
 export const KYC_ABI = [
   { "type": "function", "name": "admin", "stateMutability": "view", "inputs": [], "outputs": [ {"type":"address"} ] },
+  { "type": "function", "name": "isAdmin", "stateMutability": "view", "inputs": [ {"name":"account","type":"address"} ], "outputs": [ {"type":"bool"} ] },
+  { "type": "function", "name": "setAdmin", "stateMutability": "nonpayable", "inputs": [ {"name":"account","type":"address"},{"name":"enabled","type":"bool"} ], "outputs": [] },
   { "type": "function", "name": "submitKyc", "stateMutability": "nonpayable", "inputs": [ {"name":"fullName","type":"string"},{"name":"cnic","type":"string"} ], "outputs": [] },
   { "type": "function", "name": "approve", "stateMutability": "nonpayable", "inputs": [ {"name":"user","type":"address"} ], "outputs": [] },
   { "type": "function", "name": "reject", "stateMutability": "nonpayable", "inputs": [ {"name":"user","type":"address"},{"name":"reason","type":"string"} ], "outputs": [] },

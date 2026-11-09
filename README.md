@@ -24,7 +24,7 @@ A decentralized crowdfunding platform built on Ethereum, featuring KYC verificat
   - Modern React frontend
   - Real-time updates
   - Responsive design
-  - MetaMask integration
+  - Rabby Wallet integration
 
 ## 🛠 Technology Stack
 
@@ -76,9 +76,9 @@ A decentralized crowdfunding platform built on Ethereum, featuring KYC verificat
    npm run dev
    ```
 
-5. **Configure MetaMask**
-   - Connect MetaMask to Localhost (Hardhat)
-   - Network URL: http://localhost:8545
+5. **Configure Rabby Wallet** ([install](https://rabby.io))
+   - Add a custom network for Localhost (Hardhat)
+   - Network URL: http://127.0.0.1:8546
    - Chain ID: 31337
 
 ## 💻 Usage

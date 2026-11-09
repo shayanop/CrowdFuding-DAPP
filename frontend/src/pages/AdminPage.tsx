@@ -6,7 +6,9 @@ import { KYC_ADDRESS } from '../lib/addresses'
 export default function AdminPage() {
   const { publicClient, walletClient } = useMemo(() => getClients(), [])
   const [me, setMe] = useState<string>('')
-  const [admin, setAdmin] = useState<string>('')
+  const [owner, setOwner] = useState<string>('')
+  const [isAdmin, setIsAdmin] = useState(false)
+  const [adminAddress, setAdminAddress] = useState('')
   const [address, setAddress] = useState('')
   const [reason, setReason] = useState('')
   const [loading, setLoading] = useState(false)
@@ -63,9 +65,11 @@ export default function AdminPage() {
     (async () => {
       try {
         const w = await getWallet()
-        if (w.account) setMe(w.account)
-        const a = await publicClient.readContract({ address: KYC_ADDRESS, abi: KYC_ABI, functionName: 'admin' }) as string
-        setAdmin(a)
+        if (w.account) {
+          setMe(w.account)
+          setIsAdmin(await publicClient.readContract({ address: KYC_ADDRESS, abi: KYC_ABI, functionName: 'isAdmin', args: [w.account] }) as boolean)
+        }
+        setOwner(await publicClient.readContract({ address: KYC_ADDRESS, abi: KYC_ABI, functionName: 'admin' }) as string)
         await refreshPending()
       } catch (err) {
         setError('Failed to load admin data')
@@ -137,14 +141,37 @@ export default function AdminPage() {
     }
   }
 
-  if (!me || me.toLowerCase() !== admin.toLowerCase()) {
+  async function setAdminRole(account: string, enabled: boolean) {
+    if (!me) return
+    setLoading(true)
+    setError('')
+    setSuccess('')
+    try {
+      const hash = await walletClient.writeContract({
+        account: me as `0x${string}`,
+        address: KYC_ADDRESS,
+        abi: KYC_ABI,
+        functionName: 'setAdmin',
+        args: [account as `0x${string}`, enabled]
+      })
+      await publicClient.waitForTransactionReceipt({ hash })
+      setSuccess(`${enabled ? 'Added' : 'Removed'} admin ${account.slice(0, 6)}...${account.slice(-4)}`)
+      setAdminAddress('')
+    } catch (err: any) {
+      setError(err.shortMessage || err.message || 'Failed to update admin')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (!me || !isAdmin) {
     return (
       <div className="container">
         <div className="access-denied">
           <div className="eyebrow">// Access denied</div>
           <h2>Admin clearance required</h2>
-          <p>Only the contract admin can open this console.</p>
-          <p>Connect the wallet that deployed the contracts.</p>
+          <p>Only admins can open this console.</p>
+          <p>Connect an admin wallet, or ask the owner to add yours.</p>
         </div>
       </div>
     )
@@ -268,6 +295,30 @@ export default function AdminPage() {
           </div>
         </div>
       </div>
+
+      {me.toLowerCase() === owner.toLowerCase() && (
+        <div className="admin-section">
+          <div className="eyebrow">03 / Admins</div>
+          <h3>Manage admins</h3>
+          <div className="manual-actions">
+            <input
+              placeholder="Admin wallet address"
+              value={adminAddress}
+              onChange={(e) => setAdminAddress(e.target.value)}
+              disabled={loading}
+              className="address-input"
+            />
+            <div className="action-buttons">
+              <button onClick={() => setAdminRole(adminAddress, true)} disabled={loading || !adminAddress} className="approve-button">
+                {loading ? <span className="loading"></span> : 'Add admin'}
+              </button>
+              <button onClick={() => setAdminRole(adminAddress, false)} disabled={loading || !adminAddress} className="reject-button">
+                {loading ? <span className="loading"></span> : 'Remove admin'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

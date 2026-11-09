@@ -4,7 +4,7 @@ pragma solidity ^0.8.27;
 /**
  * KYCRegistry_MuhammadShayanAhmed
  * - Tracks KYC requests (name, CNIC) per wallet
- * - Admin (deployer) can approve/reject
+ * - Owner (deployer) can add/remove admins; any admin can approve/reject
  * - Other contracts can query verification status
  */
 contract KYCRegistry_MuhammadShayanAhmed {
@@ -16,7 +16,8 @@ contract KYCRegistry_MuhammadShayanAhmed {
         KycStatus status;     // Current status
     }
 
-    address public immutable admin;
+    address public immutable admin; // owner: the deployer, manages the admin list
+    mapping(address => bool) public isAdmin;
 
     mapping(address => KycRequest) private addressToRequest;
     mapping(address => bool) private isVerifiedAddress;
@@ -28,14 +29,23 @@ contract KYCRegistry_MuhammadShayanAhmed {
     event KycSubmitted(address indexed user, string fullName, string cnic);
     event KycApproved(address indexed user, string fullName);
     event KycRejected(address indexed user, string reason);
+    event AdminUpdated(address indexed account, bool enabled);
 
     modifier onlyAdmin() {
-        require(msg.sender == admin, "Only admin");
+        require(isAdmin[msg.sender], "Only admin");
         _;
     }
 
     constructor() {
         admin = msg.sender;
+        isAdmin[msg.sender] = true;
+    }
+
+    function setAdmin(address account, bool enabled) external {
+        require(msg.sender == admin, "Only owner");
+        require(account != admin, "Owner is always admin");
+        isAdmin[account] = enabled;
+        emit AdminUpdated(account, enabled);
     }
 
     function submitKyc(string calldata fullName, string calldata cnic) external {
@@ -90,7 +100,7 @@ contract KYCRegistry_MuhammadShayanAhmed {
     }
 
     function isVerified(address user) external view returns (bool) {
-        return isVerifiedAddress[user] || user == admin;
+        return isVerifiedAddress[user] || isAdmin[user];
     }
 
     function getAllPending() external view returns (address[] memory) {

@@ -20,12 +20,12 @@ function Navigation() {
       try {
         const w = await getWallet()
         if (w.account) {
-          const admin = await publicClient.readContract({
+          setIsAdmin(await publicClient.readContract({
             address: KYC_ADDRESS,
             abi: KYC_ABI,
-            functionName: 'admin'
-          }) as string
-          setIsAdmin(w.account.toLowerCase() === admin.toLowerCase())
+            functionName: 'isAdmin',
+            args: [w.account]
+          }) as boolean)
         }
       } catch (err) {
         console.error('Failed to check admin status:', err)

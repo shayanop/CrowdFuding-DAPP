@@ -1,0 +1,39 @@
+{
+  "_format": "hh3-sol-build-info-1",
+  "id": "solc-0_8_28-9b7f432a718c219b8f9f4a3dee4e10bfd43bf3d6",
+  "solcVersion": "0.8.28",
+  "solcLongVersion": "0.8.28+commit.7893614a",
+  "userSourceNameMap": {
+    "contracts/KYCRegistry_Student.sol": "project/contracts/KYCRegistry_Student.sol"
+  },
+  "input": {
+    "language": "Solidity",
+    "settings": {
+      "evmVersion": "cancun",
+      "optimizer": {
+        "enabled": true,
+        "runs": 200
+      },
+      "outputSelection": {
+        "*": {
+          "": [
+            "ast"
+          ],
+          "*": [
+            "abi",
+            "evm.bytecode",
+            "evm.deployedBytecode",
+            "evm.methodIdentifiers",
+            "metadata"
+          ]
+        }
+      },
+      "remappings": []
+    },
+    "sources": {
+      "project/contracts/KYCRegistry_Student.sol": {
+        "content": "// SPDX-License-Identifier: MIT\r\npragma solidity ^0.8.27;\r\n\r\n/**\r\n * KYCRegistry_MuhammadShayanAhmed\r\n * - Tracks KYC requests (name, CNIC) per wallet\r\n * - Owner (deployer) can add/remove admins; any admin can approve/reject\r\n * - Other contracts can query verification status\r\n */\r\ncontract KYCRegistry_MuhammadShayanAhmed {\r\n    enum KycStatus { None, Pending, Approved, Rejected }\r\n\r\n    struct KycRequest {\r\n        string fullName;      // Student requires approval of full name per assignment\r\n        string cnic;          // National ID / CNIC string\r\n        KycStatus status;     // Current status\r\n    }\r\n\r\n    address public immutable admin; // owner: the deployer, manages the admin list\r\n    mapping(address => bool) public isAdmin;\r\n\r\n    mapping(address => KycRequest) private addressToRequest;\r\n    mapping(address => bool) private isVerifiedAddress;\r\n    \r\n    // Track pending addresses for admin panel\r\n    address[] private pendingAddresses;\r\n    mapping(address => bool) private isPendingAddress;\r\n\r\n    event KycSubmitted(address indexed user, string fullName, string cnic);\r\n    event KycApproved(address indexed user, string fullName);\r\n    event KycRejected(address indexed user, string reason);\r\n    event AdminUpdated(address indexed account, bool enabled);\r\n\r\n    modifier onlyAdmin() {\r\n        require(isAdmin[msg.sender], \"Only admin\");\r\n        _;\r\n    }\r\n\r\n    constructor() {\r\n        admin = msg.sender;\r\n        isAdmin[msg.sender] = true;\r\n    }\r\n\r\n    function setAdmin(address account, bool enabled) external {\r\n        require(msg.sender == admin, \"Only owner\");\r\n        require(account != admin, \"Owner is always admin\");\r\n        isAdmin[account] = enabled;\r\n        emit AdminUpdated(account, enabled);\r\n    }\r\n\r\n    function submitKyc(string calldata fullName, string calldata cnic) external {\r\n        KycRequest storage req = addressToRequest[msg.sender];\r\n        require(bytes(fullName).length > 0, \"Full name required\");\r\n        require(bytes(cnic).length > 0, \"CNIC required\");\r\n        require(req.status != KycStatus.Pending, \"Already pending\");\r\n\r\n        addressToRequest[msg.sender] = KycRequest({\r\n            fullName: fullName,\r\n            cnic: cnic,\r\n            status: KycStatus.Pending\r\n        });\r\n\r\n        // Add to pending list if not already there\r\n        if (!isPendingAddress[msg.sender]) {\r\n            pendingAddresses.push(msg.sender);\r\n            isPendingAddress[msg.sender] = true;\r\n        }\r\n\r\n        emit KycSubmitted(msg.sender, fullName, cnic);\r\n    }\r\n\r\n    function approve(address user) external onlyAdmin {\r\n        KycRequest storage req = addressToRequest[user];\r\n        require(req.status == KycStatus.Pending, \"Not pending\");\r\n\r\n        req.status = KycStatus.Approved;\r\n        isVerifiedAddress[user] = true;\r\n        \r\n        // Remove from pending list\r\n        _removePending(user);\r\n        \r\n        emit KycApproved(user, req.fullName);\r\n    }\r\n\r\n    function reject(address user, string calldata reason) external onlyAdmin {\r\n        KycRequest storage req = addressToRequest[user];\r\n        require(req.status == KycStatus.Pending || req.status == KycStatus.Approved, \"No request\");\r\n\r\n        req.status = KycStatus.Rejected;\r\n        isVerifiedAddress[user] = false;\r\n        \r\n        // Remove from pending list\r\n        _removePending(user);\r\n        \r\n        emit KycRejected(user, reason);\r\n    }\r\n\r\n    function getKyc(address user) external view returns (KycRequest memory) {\r\n        return addressToRequest[user];\r\n    }\r\n\r\n    function isVerified(address user) external view returns (bool) {\r\n        return isVerifiedAddress[user] || isAdmin[user];\r\n    }\r\n\r\n    function getAllPending() external view returns (address[] memory) {\r\n        return pendingAddresses;\r\n    }\r\n\r\n    function _removePending(address user) private {\r\n        if (isPendingAddress[user]) {\r\n            isPendingAddress[user] = false;\r\n            \r\n            // Find and remove from array\r\n            for (uint i = 0; i < pendingAddresses.length; i++) {\r\n                if (pendingAddresses[i] == user) {\r\n                    pendingAddresses[i] = pendingAddresses[pendingAddresses.length - 1];\r\n                    pendingAddresses.pop();\r\n                    break;\r\n                }\r\n            }\r\n        }\r\n    }\r\n}\r\n\r\n\r\n"
+      }
+    }
+  }
+}

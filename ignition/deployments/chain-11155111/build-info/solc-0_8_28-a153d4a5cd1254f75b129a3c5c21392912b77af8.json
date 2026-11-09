@@ -1,0 +1,39 @@
+{
+  "_format": "hh3-sol-build-info-1",
+  "id": "solc-0_8_28-a153d4a5cd1254f75b129a3c5c21392912b77af8",
+  "solcVersion": "0.8.28",
+  "solcLongVersion": "0.8.28+commit.7893614a",
+  "userSourceNameMap": {
+    "contracts/Crowdfunding_Student.sol": "project/contracts/Crowdfunding_Student.sol"
+  },
+  "input": {
+    "language": "Solidity",
+    "settings": {
+      "evmVersion": "cancun",
+      "optimizer": {
+        "enabled": true,
+        "runs": 200
+      },
+      "outputSelection": {
+        "*": {
+          "": [
+            "ast"
+          ],
+          "*": [
+            "abi",
+            "evm.bytecode",
+            "evm.deployedBytecode",
+            "evm.methodIdentifiers",
+            "metadata"
+          ]
+        }
+      },
+      "remappings": []
+    },
+    "sources": {
+      "project/contracts/Crowdfunding_Student.sol": {
+        "content": "// SPDX-License-Identifier: MIT\r\npragma solidity ^0.8.27;\r\n\r\ninterface IKYCRegistryMuhammadShayanAhmed {\r\n    function isVerified(address user) external view returns (bool);\r\n}\r\n\r\n/**\r\n * Crowdfunding_MuhammadShayanAhmed\r\n * - Only verified users (or admin via KYC contract) can create campaigns\r\n * - Anyone can contribute to active campaigns\r\n * - Auto mark as completed when goal reached\r\n * - Creator can withdraw when completed; then status becomes Withdrawn\r\n */\r\ncontract Crowdfunding_MuhammadShayanAhmed {\r\n    enum Status { Active, Completed, Withdrawn }\r\n\r\n    struct Campaign {\r\n        string title;\r\n        string description;\r\n        address payable creator;\r\n        uint256 goal;         // wei\r\n        uint256 raised;       // wei\r\n        Status status;\r\n    }\r\n\r\n    IKYCRegistryMuhammadShayanAhmed public immutable kyc;\r\n    address public immutable admin; // admin of KYCRegistry considered verified too\r\n\r\n    Campaign[] private campaigns;\r\n\r\n    event CampaignCreated(uint256 indexed id, address indexed creator, string title, uint256 goal);\r\n    event Contributed(uint256 indexed id, address indexed from, uint256 amount, uint256 totalRaised);\r\n    event Withdrawn(uint256 indexed id, address indexed to, uint256 amount);\r\n\r\n    constructor(IKYCRegistryMuhammadShayanAhmed _kyc) {\r\n        kyc = _kyc;\r\n        admin = msg.sender;\r\n    }\r\n\r\n    function createCampaign(string calldata title, string calldata description, uint256 goalWei) external {\r\n        require(bytes(title).length > 0, \"Title required\");\r\n        require(goalWei > 0, \"Goal must be > 0\");\r\n        require(kyc.isVerified(msg.sender), \"Not KYC verified\");\r\n\r\n        Campaign memory c = Campaign({\r\n            title: title,\r\n            description: description,\r\n            creator: payable(msg.sender),\r\n            goal: goalWei,\r\n            raised: 0,\r\n            status: Status.Active\r\n        });\r\n        campaigns.push(c);\r\n        emit CampaignCreated(campaigns.length - 1, msg.sender, title, goalWei);\r\n    }\r\n\r\n    function contribute(uint256 id) external payable {\r\n        require(id < campaigns.length, \"Invalid id\");\r\n        Campaign storage c = campaigns[id];\r\n        require(c.status == Status.Active, \"Not active\");\r\n        require(msg.value > 0, \"No ETH\");\r\n\r\n        c.raised += msg.value;\r\n        emit Contributed(id, msg.sender, msg.value, c.raised);\r\n\r\n        if (c.raised >= c.goal) {\r\n            c.status = Status.Completed;\r\n        }\r\n    }\r\n\r\n    function withdraw(uint256 id) external {\r\n        require(id < campaigns.length, \"Invalid id\");\r\n        Campaign storage c = campaigns[id];\r\n        require(c.status == Status.Completed, \"Not completed\");\r\n        require(msg.sender == c.creator, \"Only creator\");\r\n\r\n        uint256 amount = c.raised;\r\n        c.raised = 0;\r\n        c.status = Status.Withdrawn;\r\n        (bool ok, ) = c.creator.call{value: amount}(\"\");\r\n        require(ok, \"Transfer failed\");\r\n        emit Withdrawn(id, c.creator, amount);\r\n    }\r\n\r\n    function getCampaign(uint256 id) external view returns (Campaign memory) {\r\n        require(id < campaigns.length, \"Invalid id\");\r\n        return campaigns[id];\r\n    }\r\n\r\n    function getCampaignCount() external view returns (uint256) {\r\n        return campaigns.length;\r\n    }\r\n}\r\n\r\n\r\n"
+      }
+    }
+  }
+}

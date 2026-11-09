@@ -5,7 +5,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "compile": "hardhat compile",
-    "node": "hardhat node",
+    "node": "hardhat node --port 8546",
     "deploy": "hardhat ignition deploy ./ignition/modules/CrowdfundingStudent.ts --network localhost",
     "deploy:sepolia": "hardhat ignition deploy ./ignition/modules/CrowdfundingStudent.ts --network sepolia"
   },
