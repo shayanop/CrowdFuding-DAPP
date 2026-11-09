@@ -6,7 +6,8 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "compile": "hardhat compile",
     "node": "hardhat node",
-    "deploy": "hardhat ignition deploy ./ignition/modules/CrowdfundingStudent.ts --network localhost"
+    "deploy": "hardhat ignition deploy ./ignition/modules/CrowdfundingStudent.ts --network localhost",
+    "deploy:sepolia": "hardhat ignition deploy ./ignition/modules/CrowdfundingStudent.ts --network sepolia"
   },
   "keywords": [],
   "author": "",

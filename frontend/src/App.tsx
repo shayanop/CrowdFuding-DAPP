@@ -217,15 +217,6 @@ function MainContent() {
     }
   }
 
-  const getStatusClass = (status: number) => {
-    switch (status) {
-      case 0: return 'status-active'
-      case 1: return 'status-completed'
-      case 2: return 'status-withdrawn'
-      default: return 'status-active'
-    }
-  }
-
   const getStatusText = (status: number) => {
     switch (status) {
       case 0: return 'Active'
